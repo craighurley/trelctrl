@@ -22,6 +22,11 @@ dependencies = [
     "python-dotenv>=1.0.0",
 ]
 
+[project.urls]
+Homepage = "https://github.com/craighurley/trelctl"
+Repository = "https://github.com/craighurley/trelctl"
+Issues = "https://github.com/craighurley/trelctl/issues"
+
 [project.scripts]
 trelctl = "trelctl.main:app"
 
