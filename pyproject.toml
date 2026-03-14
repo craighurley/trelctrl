@@ -1,0 +1,49 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "trelctl"
+version = "0.1.0"
+description = "CLI tool for managing Trello boards via the Trello REST API"
+readme = "README.md"
+license = { text = "MIT" }
+authors = [
+    {name = "Craig Hurley", email = "craighurley78@gmail.com"}
+]
+maintainers = [
+    {name = "Craig Hurley", email = "craighurley78@gmail.com"}
+]
+keywords = ["trello", "cli"]
+requires-python = ">=3.14"
+dependencies = [
+    "typer>=0.15.0",
+    "httpx>=0.28.0",
+    "python-dotenv>=1.0.0",
+]
+
+[project.scripts]
+trelctl = "trelctl.main:app"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0.0",
+    "respx>=0.22.0",
+    "twine>=6.2.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py314"
+extend-exclude = [
+    "temp/",
+    "build/",
+    "dist/",
+    "test/",
+]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]
