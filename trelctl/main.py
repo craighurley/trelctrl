@@ -1,3 +1,6 @@
+import logging
+import sys
+
 import typer
 from dotenv import load_dotenv
 
@@ -11,6 +14,19 @@ from trelctl.commands.import_lists import import_lists
 load_dotenv()
 
 app = typer.Typer(no_args_is_help=True)
+
+
+@app.callback()
+def main(
+    verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable verbose HTTP logging."),
+) -> None:
+    if verbose:
+        _logger = logging.getLogger("trelctl")
+        _logger.setLevel(logging.DEBUG)
+        handler = logging.StreamHandler(sys.stderr)
+        handler.setFormatter(logging.Formatter("%(message)s"))
+        _logger.addHandler(handler)
+
 
 board_app = typer.Typer(no_args_is_help=True)
 import_app = typer.Typer(no_args_is_help=True)

@@ -1,3 +1,5 @@
+import logging
+
 import httpx
 import pytest
 import respx
@@ -111,3 +113,31 @@ def test_post_error_response_exits(capsys: pytest.CaptureFixture) -> None:
     assert exc.value.code == 1
     err = capsys.readouterr().err
     assert "400" in err
+
+
+# --- debug logging ---
+
+
+@respx.mock
+def test_get_logs_request_and_response(caplog: pytest.LogCaptureFixture) -> None:
+    respx.get(f"{BASE}/some/path").mock(return_value=httpx.Response(200, json={"ok": True}))
+    with caplog.at_level(logging.DEBUG, logger="trelctl.trello.client"):
+        client.get("/some/path")
+    messages = [r.message for r in caplog.records]
+    assert any("GET /some/path" in m for m in messages)
+    assert any("200" in m for m in messages)
+    assert not any("test-key" in m for m in messages)
+    assert not any("test-token" in m for m in messages)
+
+
+@respx.mock
+def test_post_logs_request_body_and_response(caplog: pytest.LogCaptureFixture) -> None:
+    respx.post(f"{BASE}/some/path").mock(return_value=httpx.Response(200, json={"id": "abc"}))
+    with caplog.at_level(logging.DEBUG, logger="trelctl.trello.client"):
+        client.post("/some/path", {"name": "Test"})
+    messages = [r.message for r in caplog.records]
+    assert any("POST /some/path" in m for m in messages)
+    assert any("Test" in m for m in messages)
+    assert any("200" in m for m in messages)
+    assert not any("test-key" in m for m in messages)
+    assert not any("test-token" in m for m in messages)
