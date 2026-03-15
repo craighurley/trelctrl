@@ -131,7 +131,7 @@ Fixed column headers (case-sensitive). Column order does not matter. `name` is r
 |---------------|----------|-----------------------------------|----------------------------------|
 | `name`        | Yes      | Plain text                        | `Fix login bug`                  |
 | `description` | No       | Plain text                        | `Steps to reproduce...`          |
-| `labels`      | No       | Comma-separated label names       | `Bug,High Priority`              |
+| `labels`      | No       | Pipe-separated label names        | `Bug\|High Priority`             |
 | `due_date`    | No       | `YYYY-MM-DD`                      | `2026-04-15`                     |
 | `checklist`   | No       | Pipe-separated items              | `Write tests\|Review PR\|Deploy` |
 | `members`     | No       | Pipe-separated Trello member IDs  | `abc123def456\|ghi789jkl0`       |

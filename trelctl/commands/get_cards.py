@@ -12,8 +12,8 @@ _FIELDS = ["name", "description", "labels", "due_date", "checklist", "members"]
 
 def _format_card(card: dict) -> dict[str, str]:
     """Map a Trello card API response to a CSV row dict."""
-    # Labels: comma-separated names
-    label_names = ",".join(lbl.get("name", "") for lbl in card.get("labels", []))
+    # Labels: pipe-separated names
+    label_names = "|".join(lbl.get("name", "") for lbl in card.get("labels", []))
 
     # Due date: extract YYYY-MM-DD from ISO timestamp
     due_raw = card.get("due") or ""

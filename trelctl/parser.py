@@ -60,7 +60,7 @@ def parse_cards(path: Path) -> list[CardRow]:
 
             labels_raw = row.get("labels", "").strip()
             labels = (
-                [lbl.strip() for lbl in labels_raw.split(",") if lbl.strip()] if labels_raw else []
+                [lbl.strip() for lbl in labels_raw.split("|") if lbl.strip()] if labels_raw else []
             )
 
             checklist_raw = row.get("checklist", "").strip()

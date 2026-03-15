@@ -112,7 +112,7 @@ def test_format_card_basic() -> None:
     result = _format_card(card)
     assert result["name"] == "Fix bug"
     assert result["description"] == "Steps to reproduce"
-    assert result["labels"] == "Bug,High Priority"
+    assert result["labels"] == "Bug|High Priority"
     assert result["due_date"] == "2026-04-15"
     assert result["members"] == "abc123|def456"
     assert result["checklist"] == ""

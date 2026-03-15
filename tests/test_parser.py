@@ -54,7 +54,7 @@ def test_parse_cards_minimal(tmp_path: Path) -> None:
 def test_parse_cards_all_fields(tmp_path: Path) -> None:
     csv_content = (
         "name,description,labels,due_date,checklist,members\n"
-        '"Fix bug","Steps to reproduce","Bug,High Priority",'
+        '"Fix bug","Steps to reproduce","Bug|High Priority",'
         '"2026-04-15","Write tests|Review PR|Deploy","abc123|def456"\n'
     )
     f = _csv_file(csv_content, tmp_path)
