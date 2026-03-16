@@ -6,6 +6,9 @@ import respx
 from typer.testing import CliRunner
 
 from trelctl.commands.create_board import app as create_board_app
+from trelctl.commands.delete_cards import app as delete_cards_app
+from trelctl.commands.delete_labels import app as delete_labels_app
+from trelctl.commands.delete_lists import app as delete_lists_app
 from trelctl.commands.get_cards import _FIELDS, _format_card
 from trelctl.commands.get_cards import app as get_cards_app
 from trelctl.commands.get_lists import app as get_lists_app
@@ -333,7 +336,7 @@ def test_import_cards_dry_run(tmp_path: Path) -> None:
 
 
 @respx.mock
-def test_import_cards_warns_on_unknown_label(tmp_path: Path) -> None:
+def test_import_cards_creates_missing_label(tmp_path: Path) -> None:
     csv = tmp_path / "cards.csv"
     csv.write_text("name,labels\nFix bug,Ghost\n")
     respx.get(f"{BASE}/members/me/boards").mock(
@@ -345,12 +348,25 @@ def test_import_cards_warns_on_unknown_label(tmp_path: Path) -> None:
     respx.get(f"{BASE}/boards/board1/labels").mock(
         return_value=httpx.Response(200, json=[{"id": "lbl1", "name": "Bug"}])
     )
+    respx.post(f"{BASE}/boards/board1/labels").mock(
+        return_value=httpx.Response(200, json={"id": "lbl2", "name": "Ghost"})
+    )
     respx.post(f"{BASE}/cards").mock(
         return_value=httpx.Response(200, json={"id": "card1", "name": "Fix bug"})
     )
     result = runner.invoke(import_cards_app, ["--board", "My Board", "--list", "Backlog", str(csv)])
     assert result.exit_code == 0
-    assert "Ghost" in result.output  # typer runner mixes stderr into output
+    assert 'Created label: "Ghost" (id: lbl2)' in result.output
+    assert 'Created card: "Fix bug"' in result.output
+    # Verify the card was posted with the newly created label ID
+    post_call = next(
+        c
+        for c in respx.calls
+        if c.request.method == "POST"
+        and "/cards" in str(c.request.url)
+        and "/labels" not in str(c.request.url)
+    )
+    assert "lbl2" in str(post_call.request.url)
 
 
 @respx.mock
@@ -381,3 +397,160 @@ def test_import_cards_resolves_labels(tmp_path: Path) -> None:
         and "/checklists" not in str(c.request.url)
     )
     assert "lbl1" in str(post_call.request.url)
+
+
+# --- delete labels ---
+
+
+@respx.mock
+def test_delete_labels_deletes_all() -> None:
+    respx.get(f"{BASE}/members/me/boards").mock(
+        return_value=httpx.Response(200, json=_boards_mock())
+    )
+    respx.get(f"{BASE}/boards/board1/labels").mock(
+        return_value=httpx.Response(
+            200,
+            json=[
+                {"id": "lbl1", "name": "Bug"},
+                {"id": "lbl2", "name": "Feature"},
+            ],
+        )
+    )
+    respx.delete(f"{BASE}/labels/lbl1").mock(return_value=httpx.Response(200, json={}))
+    respx.delete(f"{BASE}/labels/lbl2").mock(return_value=httpx.Response(200, json={}))
+    result = runner.invoke(delete_labels_app, ["--board", "My Board", "--yes"])
+    assert result.exit_code == 0
+    assert 'Deleted label: "Bug" (id: lbl1)' in result.output
+    assert 'Deleted label: "Feature" (id: lbl2)' in result.output
+    assert "Done. Deleted 2 label(s)." in result.output
+
+
+@respx.mock
+def test_delete_labels_empty_board() -> None:
+    respx.get(f"{BASE}/members/me/boards").mock(
+        return_value=httpx.Response(200, json=_boards_mock())
+    )
+    respx.get(f"{BASE}/boards/board1/labels").mock(return_value=httpx.Response(200, json=[]))
+    result = runner.invoke(delete_labels_app, ["--board", "My Board"])
+    assert result.exit_code == 0
+    assert "No labels found on board." in result.output
+
+
+# --- delete cards ---
+
+
+@respx.mock
+def test_delete_cards_deletes_all() -> None:
+    respx.get(f"{BASE}/members/me/boards").mock(
+        return_value=httpx.Response(200, json=_boards_mock())
+    )
+    respx.get(f"{BASE}/boards/board1/cards").mock(
+        return_value=httpx.Response(
+            200,
+            json=[
+                {"id": "c1", "name": "Fix bug"},
+                {"id": "c2", "name": "Add feature"},
+            ],
+        )
+    )
+    respx.delete(f"{BASE}/cards/c1").mock(return_value=httpx.Response(200, json={}))
+    respx.delete(f"{BASE}/cards/c2").mock(return_value=httpx.Response(200, json={}))
+    result = runner.invoke(delete_cards_app, ["--board", "My Board", "--yes"])
+    assert result.exit_code == 0
+    assert 'Deleted card: "Fix bug" (id: c1)' in result.output
+    assert 'Deleted card: "Add feature" (id: c2)' in result.output
+    assert "Done. Deleted 2 card(s)." in result.output
+
+
+@respx.mock
+def test_delete_cards_empty_board() -> None:
+    respx.get(f"{BASE}/members/me/boards").mock(
+        return_value=httpx.Response(200, json=_boards_mock())
+    )
+    respx.get(f"{BASE}/boards/board1/cards").mock(return_value=httpx.Response(200, json=[]))
+    result = runner.invoke(delete_cards_app, ["--board", "My Board"])
+    assert result.exit_code == 0
+    assert "No cards found on board." in result.output
+
+
+# --- delete lists ---
+
+
+@respx.mock
+def test_delete_lists_archives_all() -> None:
+    respx.get(f"{BASE}/members/me/boards").mock(
+        return_value=httpx.Response(200, json=_boards_mock())
+    )
+    respx.get(f"{BASE}/boards/board1/lists").mock(
+        return_value=httpx.Response(
+            200,
+            json=[
+                {"id": "list1", "name": "Backlog"},
+                {"id": "list2", "name": "Done"},
+            ],
+        )
+    )
+    respx.put(f"{BASE}/lists/list1/closed").mock(
+        return_value=httpx.Response(200, json={"id": "list1", "closed": True})
+    )
+    respx.put(f"{BASE}/lists/list2/closed").mock(
+        return_value=httpx.Response(200, json={"id": "list2", "closed": True})
+    )
+    result = runner.invoke(delete_lists_app, ["--board", "My Board", "--yes"])
+    assert result.exit_code == 0
+    assert 'Archived list: "Backlog" (id: list1)' in result.output
+    assert 'Archived list: "Done" (id: list2)' in result.output
+    assert "Done. Archived 2 list(s)." in result.output
+
+
+@respx.mock
+def test_delete_lists_empty_board() -> None:
+    respx.get(f"{BASE}/members/me/boards").mock(
+        return_value=httpx.Response(200, json=_boards_mock())
+    )
+    respx.get(f"{BASE}/boards/board1/lists").mock(return_value=httpx.Response(200, json=[]))
+    result = runner.invoke(delete_lists_app, ["--board", "My Board"])
+    assert result.exit_code == 0
+    assert "No lists found on board." in result.output
+
+
+# --- delete confirmation prompts ---
+
+
+@respx.mock
+def test_delete_labels_aborts_on_no() -> None:
+    respx.get(f"{BASE}/members/me/boards").mock(
+        return_value=httpx.Response(200, json=_boards_mock())
+    )
+    respx.get(f"{BASE}/boards/board1/labels").mock(
+        return_value=httpx.Response(200, json=[{"id": "lbl1", "name": "Bug"}])
+    )
+    result = runner.invoke(delete_labels_app, ["--board", "My Board"], input="n\n")
+    assert result.exit_code == 1
+    assert "Deleted label" not in result.output
+
+
+@respx.mock
+def test_delete_cards_aborts_on_no() -> None:
+    respx.get(f"{BASE}/members/me/boards").mock(
+        return_value=httpx.Response(200, json=_boards_mock())
+    )
+    respx.get(f"{BASE}/boards/board1/cards").mock(
+        return_value=httpx.Response(200, json=[{"id": "c1", "name": "Fix bug"}])
+    )
+    result = runner.invoke(delete_cards_app, ["--board", "My Board"], input="n\n")
+    assert result.exit_code == 1
+    assert "Deleted card" not in result.output
+
+
+@respx.mock
+def test_delete_lists_aborts_on_no() -> None:
+    respx.get(f"{BASE}/members/me/boards").mock(
+        return_value=httpx.Response(200, json=_boards_mock())
+    )
+    respx.get(f"{BASE}/boards/board1/lists").mock(
+        return_value=httpx.Response(200, json=[{"id": "list1", "name": "Backlog"}])
+    )
+    result = runner.invoke(delete_lists_app, ["--board", "My Board"], input="n\n")
+    assert result.exit_code == 1
+    assert "Archived list" not in result.output

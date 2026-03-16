@@ -10,13 +10,19 @@ Trello REST API docs: [Atlassian Trello REST API](https://developer.atlassian.co
 
 Create a new Trello board with a specified name.
 
+API reference: [create board](https://developer.atlassian.com/cloud/trello/rest/api-group-boards/#api-boards-post)
+
 ### import lists
 
 Parse a CSV file and create lists in a specified board. Each CSV row becomes one list.
 
+API reference: [create list](https://developer.atlassian.com/cloud/trello/rest/api-group-boards/#api-boards-id-lists-post)
+
 ### import cards
 
 Parse a CSV file and create cards in a specified board and list. Each CSV row becomes one card.
+
+API reference: [create card](https://developer.atlassian.com/cloud/trello/rest/api-group-cards/#api-cards-post)
 
 ### get lists
 
@@ -35,6 +41,24 @@ API reference: [get cards](https://developer.atlassian.com/cloud/trello/rest/api
 Get all members of a board in CSV format.
 
 API reference: [get members](https://developer.atlassian.com/cloud/trello/rest/api-group-boards/#api-boards-id-members-get)
+
+### delete lists
+
+Archive all lists on a board (Trello lists cannot be deleted, only archived).
+
+API reference: [archive list](https://developer.atlassian.com/cloud/trello/rest/api-group-lists/#api-lists-id-closed-put)
+
+### delete cards
+
+Delete all cards from a board.
+
+API reference: [delete card](https://developer.atlassian.com/cloud/trello/rest/api-group-cards/#api-cards-id-delete)
+
+### delete labels
+
+Delete all labels from a board.
+
+API reference: [delete label](https://developer.atlassian.com/cloud/trello/rest/api-group-labels/#api-labels-id-delete)
 
 ## Tech Stack
 
@@ -59,14 +83,17 @@ trelctl/
 │   │   ├── import_cards.py      # `import cards` subcommand
 │   │   ├── get_lists.py         # `get lists` subcommand
 │   │   ├── get_members.py       # `get members` subcommand
-│   │   └── get_cards.py         # `get cards` subcommand
+│   │   ├── get_cards.py         # `get cards` subcommand
+│   │   ├── delete_lists.py       # `delete lists` subcommand
+│   │   ├── delete_cards.py       # `delete cards` subcommand
+│   │   └── delete_labels.py     # `delete labels` subcommand
 │   ├── trello/
 │   │   ├── __init__.py
 │   │   ├── client.py            # HTTP client, auth, base request helpers
 │   │   ├── boards.py            # Board lookup and creation
-│   │   ├── lists.py             # List lookup and creation
-│   │   ├── cards.py             # Card creation and retrieval
-│   │   └── labels.py            # Label lookup
+│   │   ├── lists.py             # List lookup, creation, and archival
+│   │   ├── cards.py             # Card creation, retrieval, and deletion
+│   │   └── labels.py            # Label lookup, creation, and deletion
 │   └── parser.py                # CSV parsing and row mapping
 ├── tests/
 │   ├── test_parser.py
@@ -85,6 +112,9 @@ trelctl import cards --board <name-or-id> --list <name-or-id> <file.csv>
 trelctl get lists --board <name-or-id>
 trelctl get cards --board <name-or-id> [--list <name-or-id>]
 trelctl get members --board <name-or-id>
+trelctl delete lists --board <name-or-id>
+trelctl delete cards --board <name-or-id>
+trelctl delete labels --board <name-or-id>
 ```
 
 Common flags:
@@ -100,6 +130,9 @@ trelctl import cards --board "My Board" --list "Backlog" cards.csv
 trelctl get lists --board "My Board"
 trelctl get cards --board "My Board" --list "Backlog"
 trelctl get members --board "My Board"
+trelctl delete lists --board "My Board"
+trelctl delete cards --board "My Board"
+trelctl delete labels --board "My Board"
 ```
 
 ## Authentication
@@ -198,7 +231,7 @@ Per-row card creation:
 
 Label handling:
 - Match label names to existing board labels (case-insensitive)
-- If a label name does not exist on the board, print a warning to stderr and skip that label (do not create new labels)
+- If a label name does not exist on the board, automatically create it via `POST /boards/{boardId}/labels` with `name=<label>`
 
 Print `Created card: "<name>" (id: <cardId>)` per row.
 
@@ -222,6 +255,36 @@ Get cards CSV uses the same column format as import so files can be round-trippe
 1. Resolve board (see above)
 2. `GET /boards/{boardId}/members` - fetch all members
 3. Write CSV with columns: `name`
+
+### delete lists
+
+1. Resolve board (see above)
+2. `GET /boards/{boardId}/lists` - fetch all lists
+3. For each list: `PUT /lists/{listId}/closed` with `value=true` (Trello lists cannot be deleted, only archived)
+
+Print `Archived list: "<name>" (id: <listId>)` per list, then `Done. Archived N list(s).`
+
+If the board has no lists, print `No lists found on board.`
+
+### delete cards
+
+1. Resolve board (see above)
+2. `GET /boards/{boardId}/cards` - fetch all cards
+3. For each card: `DELETE /cards/{cardId}`
+
+Print `Deleted card: "<name>" (id: <cardId>)` per card, then `Done. Deleted N card(s).`
+
+If the board has no cards, print `No cards found on board.`
+
+### delete labels
+
+1. Resolve board (see above)
+2. `GET /boards/{boardId}/labels` - fetch all labels
+3. For each label: `DELETE /labels/{labelId}`
+
+Print `Deleted label: "<name>" (id: <labelId>)` per label, then `Done. Deleted N label(s).`
+
+If the board has no labels, print `No labels found on board.`
 
 ### Error handling
 

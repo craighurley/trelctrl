@@ -16,7 +16,7 @@ def get_members(
     resolved_board = boards.resolve_board(board)
     members: list = client.get(f"/boards/{resolved_board['id']}/members")
 
-    writer = csv.DictWriter(sys.stdout, fieldnames=["name"])
+    writer = csv.DictWriter(sys.stdout, fieldnames=["name"], lineterminator="\n")
     writer.writeheader()
     for member in members:
         writer.writerow({"name": member["id"]})

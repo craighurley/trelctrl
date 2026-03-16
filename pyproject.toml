@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "trelctl"
-version = "1.1.2"
+version = "1.2.0"
 description = "CLI tool for managing Trello boards via the Trello REST API"
 readme = "README.md"
 license = { text = "MIT" }

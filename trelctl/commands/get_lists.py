@@ -16,7 +16,7 @@ def get_lists(
     resolved_board = boards.resolve_board(board)
     board_lists = lists.get_lists(resolved_board["id"])
 
-    writer = csv.DictWriter(sys.stdout, fieldnames=["name"])
+    writer = csv.DictWriter(sys.stdout, fieldnames=["name"], lineterminator="\n")
     writer.writeheader()
     for lst in board_lists:
         writer.writerow({"name": lst["name"]})

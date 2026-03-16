@@ -57,7 +57,7 @@ def get_cards(
     else:
         card_list = cards.get_board_cards(board_id)
 
-    writer = csv.DictWriter(sys.stdout, fieldnames=_FIELDS)
+    writer = csv.DictWriter(sys.stdout, fieldnames=_FIELDS, lineterminator="\n")
     writer.writeheader()
     for card in card_list:
         writer.writerow(_format_card(card))

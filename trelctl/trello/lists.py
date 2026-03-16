@@ -33,4 +33,9 @@ def resolve_list(board_id: str, name_or_id: str) -> dict:
 
 def create_list(board_id: str, name: str) -> dict:
     """Create a new list on a board."""
-    return client.post(f"/boards/{board_id}/lists", {"name": name})
+    return client.post(f"/boards/{board_id}/lists", {"name": name, "pos": "bottom"})
+
+
+def archive_list(list_id: str) -> dict:
+    """Archive a list (Trello lists cannot be deleted, only archived)."""
+    return client.put(f"/lists/{list_id}/closed", {"value": "true"})

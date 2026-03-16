@@ -33,14 +33,19 @@ def import_cards(
     if all_label_names:
         board_labels = labels.get_labels(board_id)
         label_lookup = {lbl["name"].lower(): lbl["id"] for lbl in board_labels}
+        used_colours = [lbl.get("color", "") for lbl in board_labels if lbl.get("color")]
         for name in all_label_names:
             lid = label_lookup.get(name.lower())
             if lid:
                 label_id_map[name] = lid
             else:
-                import sys
-
-                print(f"Warning: label '{name}' not found on board — skipping.", file=sys.stderr)
+                if dry_run:
+                    print(f'[dry-run] Would create label: "{name}"')
+                else:
+                    created = labels.create_label(board_id, name, used_colours)
+                    label_id_map[name] = created["id"]
+                    used_colours.append(created.get("color", ""))
+                    print(f'Created label: "{name}" (id: {created["id"]})')
 
     count = 0
     for row in card_rows:

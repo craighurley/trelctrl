@@ -45,3 +45,8 @@ def get_list_cards(list_id: str) -> list[dict]:
 def get_card_checklists(card_id: str) -> list[dict]:
     """Fetch all checklists for a card."""
     return client.get(f"/cards/{card_id}/checklists")
+
+
+def delete_card(card_id: str) -> None:
+    """Delete a card by ID."""
+    client.delete(f"/cards/{card_id}")

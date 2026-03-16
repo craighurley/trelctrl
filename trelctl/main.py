@@ -5,6 +5,9 @@ import typer
 from dotenv import load_dotenv
 
 from trelctl.commands.create_board import create_board
+from trelctl.commands.delete_cards import delete_cards
+from trelctl.commands.delete_labels import delete_labels
+from trelctl.commands.delete_lists import delete_lists
 from trelctl.commands.get_cards import get_cards
 from trelctl.commands.get_lists import get_lists
 from trelctl.commands.get_members import get_members
@@ -31,10 +34,12 @@ def main(
 board_app = typer.Typer(no_args_is_help=True)
 import_app = typer.Typer(no_args_is_help=True)
 get_app = typer.Typer(no_args_is_help=True)
+delete_app = typer.Typer(no_args_is_help=True)
 
 app.add_typer(board_app, name="create")
 app.add_typer(import_app, name="import")
 app.add_typer(get_app, name="get")
+app.add_typer(delete_app, name="delete")
 
 board_app.command("board")(create_board)
 import_app.command("lists")(import_lists)
@@ -42,3 +47,6 @@ import_app.command("cards")(import_cards)
 get_app.command("lists")(get_lists)
 get_app.command("cards")(get_cards)
 get_app.command("members")(get_members)
+delete_app.command("cards")(delete_cards)
+delete_app.command("labels")(delete_labels)
+delete_app.command("lists")(delete_lists)

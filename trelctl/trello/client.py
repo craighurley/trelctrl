@@ -57,6 +57,30 @@ def post(path: str, data: dict | None = None) -> dict:
     return response.json()
 
 
+def put(path: str, data: dict | None = None) -> dict:
+    """Perform an authenticated PUT request."""
+    auth = get_auth()
+    query = {**(data or {}), **auth}
+    logger.debug(">>> PUT %s", path)
+    if data:
+        logger.debug("    %s", data)
+    response = httpx.put(f"{BASE_URL}{path}", params=query)
+    logger.debug("<<< %s", response.status_code)
+    logger.debug("    %s", response.text)
+    _check(response, f"PUT {path}")
+    return response.json()
+
+
+def delete(path: str) -> None:
+    """Perform an authenticated DELETE request."""
+    auth = get_auth()
+    logger.debug(">>> DELETE %s", path)
+    response = httpx.delete(f"{BASE_URL}{path}", params=auth)
+    logger.debug("<<< %s", response.status_code)
+    logger.debug("    %s", response.text)
+    _check(response, f"DELETE {path}")
+
+
 def _check(response: httpx.Response, context: str) -> None:
     if not response.is_success:
         print(
